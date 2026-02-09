@@ -1,0 +1,5 @@
+node_modules/
+dist/
+electron/icon.ico
+electron/generate-icon.js
+*.log

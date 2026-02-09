@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPXtruder Modern – Converta trilhas GPS em modelos 3D</title>
+    <meta name="description" content="Converta arquivos GPX com dados de elevação em modelos 3D imprimíveis (STL). Processamento 100% no navegador, sem envio de dados.">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <!-- ============ HEADER ============ -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg class="logo-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+                <div>
+                    <h1>GPXtruder <span class="logo-badge">Modern</span></h1>
+                    <p class="logo-subtitle">Trilhas GPS → Modelos 3D imprimíveis</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-theme" class="btn-icon" title="Alternar tema claro/escuro" aria-label="Alternar tema">
+                    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============ MAIN LAYOUT ============ -->
+    <main class="main-layout">
+
+        <!-- ===== PAINEL DE ENTRADA (esquerda) ===== -->
+        <aside class="panel panel-input">
+
+            <!-- Upload de GPX -->
+            <section class="card">
+                <h2 class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Arquivo GPX
+                </h2>
+
+                <div id="drop-zone" class="drop-zone">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    <p>Arraste um arquivo <strong>.gpx</strong> aqui</p>
+                    <p class="drop-zone-hint">ou clique para selecionar</p>
+                    <input type="file" id="gpx-file" accept=".gpx" hidden>
+                </div>
+
+                <div class="input-group" style="margin-top: 0.75rem;">
+                    <button id="btn-sample" class="btn btn-outline btn-block">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Usar trilha de exemplo
+                    </button>
+                </div>
+
+                <!-- Info do GPX carregado -->
+                <div id="gpx-info" class="gpx-info hidden">
+                    <h3 id="gpx-name" class="gpx-info-name"></h3>
+                    <div class="gpx-info-grid">
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Distância</span>
+                            <span id="gpx-distance" class="gpx-stat-value">—</span>
+                        </div>
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Pontos</span>
+                            <span id="gpx-points" class="gpx-stat-value">—</span>
+                        </div>
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Elev. Min</span>
+                            <span id="gpx-ele-min" class="gpx-stat-value">—</span>
+                        </div>
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Elev. Max</span>
+                            <span id="gpx-ele-max" class="gpx-stat-value">—</span>
+                        </div>
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Ganho</span>
+                            <span id="gpx-gain" class="gpx-stat-value">—</span>
+                        </div>
+                        <div class="gpx-stat">
+                            <span class="gpx-stat-label">Perda</span>
+                            <span id="gpx-loss" class="gpx-stat-value">—</span>
+                        </div>
+                    </div>
+                    <div id="gpx-no-elevation" class="alert alert-warning hidden">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Arquivo sem dados de elevação. Use "Forçar elevação padrão".
+                    </div>
+                </div>
+            </section>
+
+            <!-- Opções de Rota -->
+            <section class="card collapsible">
+                <h2 class="card-title card-toggle" data-target="route-options">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Opções de Rota
+                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </h2>
+                <div id="route-options" class="card-body">
+                    <!-- Exagero Vertical -->
+                    <div class="input-group">
+                        <label class="label" for="vertical">
+                            Exagero Vertical
+                            <span class="tooltip" data-tip="Multiplica a elevação real. Valores maiores tornam as montanhas mais altas no modelo.">?</span>
+                        </label>
+                        <div class="input-row">
+                            <input type="range" id="vertical-slider" min="1" max="20" step="0.5" value="5" class="slider">
+                            <input type="number" id="vertical" min="1" max="50" step="0.5" value="5" class="input input-sm">
+                        </div>
+                    </div>
+
+                    <!-- Clip Elevação Mínima -->
+                    <div class="input-group">
+                        <label class="label">
+                            Cortar na elevação mínima
+                            <span class="tooltip" data-tip="Remove a elevação abaixo do ponto mais baixo, mantendo apenas a variação relativa.">?</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="zcut" checked>
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Ativo</span>
+                        </label>
+                    </div>
+
+                    <!-- Forçar Elevação -->
+                    <div class="input-group">
+                        <label class="label">
+                            Forçar elevação padrão
+                            <span class="tooltip" data-tip="Ignora dados de elevação do GPX e usa um valor fixo. Útil para arquivos sem dados de elevação.">?</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="zoverride">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Desligado</span>
+                        </label>
+                        <input type="number" id="zconstant" min="1" value="100" class="input input-sm" style="margin-top: 0.5rem;" placeholder="Elevação (m)">
+                    </div>
+
+                    <!-- Suavização -->
+                    <div class="input-group">
+                        <label class="label">
+                            Suavização
+                            <span class="tooltip" data-tip="Remove pontos muito próximos para suavizar a trilha. Automático calcula baseado na escala.">?</span>
+                        </label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="smooth" value="0" checked> Automática
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="smooth" value="1"> Manual
+                            </label>
+                        </div>
+                        <input type="number" id="mindist" min="0" value="10" class="input input-sm" placeholder="Intervalo mín. (m)" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Opções de Modelo -->
+            <section class="card collapsible">
+                <h2 class="card-title card-toggle" data-target="model-options">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Opções de Modelo
+                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </h2>
+                <div id="model-options" class="card-body">
+                    <!-- Estilo de Modelo -->
+                    <div class="input-group">
+                        <label class="label">Estilo do Modelo</label>
+                        <div class="shape-selector">
+                            <button class="shape-btn active" data-shape="0" title="Preserva o trajeto 2D da trilha">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17l4-4 4 4 4-8 6 6"/><rect x="2" y="3" width="20" height="18" rx="2"/></svg>
+                                <span>Mapa</span>
+                            </button>
+                            <button class="shape-btn" data-shape="1" title="Perfil de elevação em linha reta">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="20" x2="21" y2="20"/><polyline points="3 16 7 12 11 14 15 6 21 10"/></svg>
+                                <span>Linear</span>
+                            </button>
+                            <button class="shape-btn" data-shape="2" title="Perfil de elevação em anel circular">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3c2 3 3 6 3 9s-1 6-3 9"/><path d="M12 3c-2 3-3 6-3 9s1 6 3 9"/></svg>
+                                <span>Anel</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Projeção -->
+                    <div class="input-group">
+                        <label class="label">
+                            Projeção Cartográfica
+                            <span class="tooltip" data-tip="Como as coordenadas geográficas (esféricas) são convertidas para o plano 2D do modelo.">?</span>
+                        </label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="proj_type" value="0" checked> Google Maps
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="proj_type" value="2"> UTM
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="proj_type" value="1"> Personalizada
+                            </label>
+                        </div>
+                        <input type="text" id="projection" class="input" placeholder="Definição proj4 (ex: +proj=utm +zone=23 ...)" disabled>
+                    </div>
+
+                    <!-- Fit to Region -->
+                    <div class="input-group">
+                        <label class="label">
+                            Ajustar à região
+                            <span class="tooltip" data-tip="Define manualmente os limites geográficos da região do modelo em coordenadas projetadas.">?</span>
+                        </label>
+                        <label class="toggle">
+                            <input type="checkbox" id="regionfit">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Desligado</span>
+                        </label>
+                        <div id="region-inputs" class="region-inputs hidden">
+                            <div class="input-row">
+                                <div class="input-col">
+                                    <label class="label-sm">Leste Min</label>
+                                    <input type="number" id="east_min" class="input input-sm" placeholder="0">
+                                </div>
+                                <div class="input-col">
+                                    <label class="label-sm">Leste Max</label>
+                                    <input type="number" id="east_max" class="input input-sm" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-col">
+                                    <label class="label-sm">Norte Min</label>
+                                    <input type="number" id="north_min" class="input input-sm" placeholder="0">
+                                </div>
+                                <div class="input-col">
+                                    <label class="label-sm">Norte Max</label>
+                                    <input type="number" id="north_max" class="input input-sm" placeholder="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Marcadores -->
+                    <div class="input-group">
+                        <label class="label">Marcadores de Distância</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="marker" value="0" checked> Nenhum
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="marker" value="1"> Km
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="marker" value="2"> Milhas
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="marker" value="3"> Personalizado
+                            </label>
+                        </div>
+                        <input type="number" id="marker_interval" min="1" value="1000" class="input input-sm" placeholder="Intervalo (m)" disabled>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Opções de Tamanho -->
+            <section class="card collapsible">
+                <h2 class="card-title card-toggle" data-target="size-options">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3H3v18h18V3z"/><path d="M9 3v18"/><path d="M3 9h18"/></svg>
+                    Tamanho do Modelo
+                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </h2>
+                <div id="size-options" class="card-body">
+                    <div class="input-row">
+                        <div class="input-col">
+                            <label class="label" for="width">Largura máx. (mm)</label>
+                            <input type="number" id="width" min="20" value="150" class="input">
+                        </div>
+                        <div class="input-col">
+                            <label class="label" for="depth">Profundidade máx. (mm)</label>
+                            <input type="number" id="depth" min="20" value="150" class="input">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-col">
+                            <label class="label" for="path_width">Largura do caminho (mm)</label>
+                            <input type="number" id="path_width" min="1" step="0.5" value="4" class="input">
+                        </div>
+                        <div class="input-col">
+                            <label class="label" for="base">Altura da base (mm)</label>
+                            <input type="number" id="base" min="0" step="0.5" value="2" class="input">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Botão Gerar -->
+            <div class="card">
+                <button id="btn-generate" class="btn btn-primary btn-block btn-lg" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Gerar Modelo 3D
+                </button>
+                <!-- Barra de progresso -->
+                <div id="progress-container" class="progress-container hidden">
+                    <div class="progress-bar">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                    <span id="progress-text" class="progress-text">Processando...</span>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ===== PAINEL DE SAÍDA (direita) ===== -->
+        <section class="panel panel-output">
+
+            <!-- Preview 3D -->
+            <div class="card card-preview">
+                <h2 class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    Preview 3D
+                </h2>
+                <div id="preview-container" class="preview-container">
+                    <div class="preview-placeholder">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.3">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                            <path d="M2 17l10 5 10-5"/>
+                            <path d="M2 12l10 5 10-5"/>
+                        </svg>
+                        <p>Carregue um arquivo GPX e clique em "Gerar Modelo 3D"</p>
+                    </div>
+                </div>
+                <!-- Controles de câmera -->
+                <div id="preview-controls" class="preview-controls hidden">
+                    <button class="btn-view" data-view="front" title="Vista frontal">Frente</button>
+                    <button class="btn-view" data-view="rear" title="Vista traseira">Trás</button>
+                    <button class="btn-view" data-view="left" title="Vista esquerda">Esq.</button>
+                    <button class="btn-view" data-view="right" title="Vista direita">Dir.</button>
+                    <button class="btn-view" data-view="top" title="Vista superior">Topo</button>
+                    <button class="btn-view" data-view="reset" title="Resetar câmera">Reset</button>
+                </div>
+            </div>
+
+            <!-- Downloads -->
+            <div id="output-downloads" class="card hidden">
+                <h2 class="card-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    Downloads
+                </h2>
+                <div class="download-buttons">
+                    <button id="btn-download-stl" class="btn btn-success">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Baixar STL
+                    </button>
+                </div>
+            </div>
+
+            <!-- Código Paramétrico -->
+            <div id="output-code" class="card collapsible hidden">
+                <h2 class="card-title card-toggle" data-target="code-content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    Código Paramétrico
+                    <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </h2>
+                <div id="code-content" class="card-body">
+                    <div class="code-tabs">
+                        <button class="code-tab active" data-tab="jscad">OpenJSCAD</button>
+                        <button class="code-tab" data-tab="oscad">OpenSCAD</button>
+                    </div>
+                    <div class="code-panel">
+                        <pre id="code-jscad" class="code-block"></pre>
+                        <pre id="code-oscad" class="code-block hidden"></pre>
+                        <button id="btn-copy-code" class="btn btn-outline btn-sm btn-copy">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            Copiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mensagens -->
+            <div id="messages" class="messages"></div>
+
+        </section>
+
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p>
+                <strong>GPXtruder Modern</strong> – Processamento 100% local, nenhum dado é enviado para servidores.
+            </p>
+            <p>
+                Baseado no <a href="https://github.com/anoved/gpxtruder" target="_blank" rel="noopener">GPXtruder</a>
+                de <a href="https://github.com/anoved" target="_blank" rel="noopener">Jim DeVona</a> (MIT License).
+            </p>
+        </div>
+    </footer>
+
+    <!-- ============ SCRIPTS ============ -->
+    <!--
+        Bibliotecas do projeto original GPXtruder.
+        Copie do repositório: https://github.com/anoved/gpxtruder/tree/gh-pages/js
+        - proj4.min.js (projeções cartográficas) – obrigatório
+        As bibliotecas csg.js, openjscad.js e lightgl.js do original foram
+        substituídas pelo preview WebGL próprio e geração STL direta.
+    -->
+    <script src="js/lib/proj4.min.js"></script>
+
+    <!-- Módulos da aplicação -->
+    <script src="js/utils.js"></script>
+    <script src="js/gpx-parser.js"></script>
+    <script src="js/model-generator.js"></script>
+    <script src="js/preview-3d.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
